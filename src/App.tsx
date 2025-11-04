@@ -497,6 +497,7 @@ function App() {
                       dateString={dateString}
                       day={day}
                       holiday={holiday}
+                      onClick={() => setDate(dateString)}
                       onDrop={(e: React.DragEvent, dateStr: string) => {
                         const eventId = e.dataTransfer.getData('eventId');
                         if (eventId) {
@@ -568,6 +569,7 @@ function App() {
                         dateString={dateString}
                         day={day}
                         holiday={holiday}
+                        onClick={() => setDate(dateString)}
                         onDrop={(e: React.DragEvent, dateStr: string) => {
                           const eventId = e.dataTransfer.getData('eventId');
                           if (eventId) {
