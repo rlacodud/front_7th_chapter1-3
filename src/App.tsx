@@ -38,6 +38,8 @@ import {
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
+import DraggableEvent from './components/DraggableEvent.tsx';
+import DroppableCell from './components/DroppableCell.tsx';
 import RecurringEventDialog from './components/RecurringEventDialog.tsx';
 import { useCalendarView } from './hooks/useCalendarView.ts';
 import { useEventForm } from './hooks/useEventForm.ts';
@@ -68,28 +70,6 @@ const notificationOptions = [
   { value: 120, label: '2시간 전' },
   { value: 1440, label: '1일 전' },
 ];
-
-// 스타일 상수
-const eventBoxStyles = {
-  notified: {
-    backgroundColor: '#ffebee',
-    fontWeight: 'bold',
-    color: '#d32f2f',
-  },
-  normal: {
-    backgroundColor: '#f5f5f5',
-    fontWeight: 'normal',
-    color: 'inherit',
-  },
-  common: {
-    p: 0.5,
-    my: 0.5,
-    borderRadius: 1,
-    minHeight: '18px',
-    width: '100%',
-    overflow: 'hidden',
-  },
-};
 
 const getRepeatTypeLabel = (type: RepeatType): string => {
   switch (type) {
@@ -140,42 +120,53 @@ function App() {
     editEvent,
   } = useEventForm();
 
-  const { events, saveEvent, deleteEvent, createRepeatEvent, fetchEvents } = useEventOperations(
-    Boolean(editingEvent),
-    () => setEditingEvent(null)
-  );
+  const { events, saveEvent, updateEvent, deleteEvent, createRepeatEvent, fetchEvents } =
+    useEventOperations(Boolean(editingEvent), () => setEditingEvent(null));
 
-  const { handleRecurringEdit, handleRecurringDelete } = useRecurringEventOperations(
-    events,
-    async () => {
+  const { handleRecurringEdit, handleRecurringDelete, findRelatedRecurringEvents } =
+    useRecurringEventOperations(events, async () => {
       // After recurring edit, refresh events from server
       await fetchEvents();
-    }
-  );
+      setEditingEvent(null);
+    });
 
   const { notifications, notifiedEvents, setNotifications } = useNotifications(events);
   const { view, setView, currentDate, holidays, navigate } = useCalendarView();
   const { searchTerm, filteredEvents, setSearchTerm } = useSearch(events, currentDate, view);
 
+  const [activeEvent, setActiveEvent] = useState<Event | null>(null);
   const [isOverlapDialogOpen, setIsOverlapDialogOpen] = useState(false);
   const [overlappingEvents, setOverlappingEvents] = useState<Event[]>([]);
   const [isRecurringDialogOpen, setIsRecurringDialogOpen] = useState(false);
   const [pendingRecurringEdit, setPendingRecurringEdit] = useState<Event | null>(null);
   const [pendingRecurringDelete, setPendingRecurringDelete] = useState<Event | null>(null);
-  const [recurringEditMode, setRecurringEditMode] = useState<boolean | null>(null); // true = single, false = all
-  const [recurringDialogMode, setRecurringDialogMode] = useState<'edit' | 'delete'>('edit');
+  const [recurringEditMode, setRecurringEditMode] = useState<boolean | null>(null);
+  const [recurringDialogMode, setRecurringDialogMode] = useState<'edit' | 'delete' | 'drag'>(
+    'edit'
+  );
+  const [pendingDragMove, setPendingDragMove] = useState<{
+    event: Event;
+    newDate: string;
+  } | null>(null);
 
   const { enqueueSnackbar } = useSnackbar();
 
   const handleRecurringConfirm = async (editSingleOnly: boolean) => {
-    if (recurringDialogMode === 'edit' && pendingRecurringEdit) {
-      // 편집 모드 저장하고 편집 폼으로 이동
+    // 드래그로 인한 반복 일정 이동 처리
+    if (recurringDialogMode === 'drag' && pendingDragMove) {
+      await handleRecurringMove(pendingDragMove.event, pendingDragMove.newDate, editSingleOnly);
+      setIsRecurringDialogOpen(false);
+      setPendingDragMove(null);
+      return;
+    } else if (recurringDialogMode === 'edit' && pendingRecurringEdit) {
+      // 편집 모드: 선택한 모드에 따라 편집 폼으로 이동
       setRecurringEditMode(editSingleOnly);
       editEvent(pendingRecurringEdit);
       setIsRecurringDialogOpen(false);
       setPendingRecurringEdit(null);
+      return;
     } else if (recurringDialogMode === 'delete' && pendingRecurringDelete) {
-      // 반복 일정 삭제 처리
+      // 삭제 모드: 선택한 모드에 따라 일정 삭제
       try {
         await handleRecurringDelete(pendingRecurringDelete, editSingleOnly);
         enqueueSnackbar('일정이 삭제되었습니다', { variant: 'success' });
@@ -185,6 +176,125 @@ function App() {
       }
       setIsRecurringDialogOpen(false);
       setPendingRecurringDelete(null);
+    }
+  };
+
+  /**
+   * 반복 일정 이동 처리
+   * @param draggedEvent - 드래그된 일정
+   * @param newDate - 이동할 새 날짜
+   * @param moveSingleOnly - true: 단일 일정만 이동 | false: 일괄 이동
+   */
+  const handleRecurringMove = async (
+    draggedEvent: Event,
+    newDate: string,
+    moveSingleOnly: boolean
+  ) => {
+    try {
+      if (moveSingleOnly) {
+        // 단일 일정만 이동: 반복 속성을 제거하고 일반 일정으로 변경
+        const updatedEvent: Event = {
+          ...draggedEvent,
+          date: newDate,
+          repeat: {
+            type: 'none',
+            interval: 0,
+          },
+        };
+
+        // 중복 검사
+        const overlapping = findOverlappingEvents(updatedEvent, events).filter(
+          (e) => e.id !== draggedEvent.id
+        );
+        const hasOverlap = overlapping.length > 0;
+
+        if (hasOverlap) {
+          setEditingEvent(updatedEvent);
+          setOverlappingEvents(overlapping);
+          setIsOverlapDialogOpen(true);
+          return;
+        }
+
+        await updateEvent(updatedEvent);
+        enqueueSnackbar('일정이 이동되었습니다', { variant: 'success' });
+      } else {
+        // 일괄 이동: 날짜 차이를 계산하여 모든 관련 일정에 동일한 차이 적용
+        const originalDate = new Date(draggedEvent.date);
+        const targetDateObj = new Date(newDate);
+        const daysDiff = Math.round(
+          (targetDateObj.getTime() - originalDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        const relatedEvents = findRelatedRecurringEvents(draggedEvent);
+
+        if (relatedEvents.length === 0) {
+          // 관련 일정이 없는 경우: 단일 일정만 이동
+          const updatedEvent: Event = { ...draggedEvent, date: newDate };
+
+          const overlapping = findOverlappingEvents(updatedEvent, events).filter(
+            (e) => e.id !== draggedEvent.id
+          );
+          const hasOverlap = overlapping.length > 0;
+
+          if (hasOverlap) {
+            setEditingEvent(updatedEvent);
+            setOverlappingEvents(overlapping);
+            setIsOverlapDialogOpen(true);
+            return;
+          }
+
+          await updateEvent(updatedEvent);
+        } else {
+          // 관련 일정이 있는 경우: 모든 일정의 날짜를 동일한 일수만큼 이동
+          const updatedEvents = relatedEvents.map((event) => {
+            const eventDate = new Date(event.date);
+            eventDate.setDate(eventDate.getDate() + daysDiff);
+            return {
+              ...event,
+              date: formatDate(eventDate),
+            };
+          });
+
+          // 모든 이동된 일정에 대해 중복 검사
+          const allOverlapping: Event[] = [];
+          for (const event of updatedEvents) {
+            const overlapping = findOverlappingEvents(
+              event,
+              events.filter((e) => !updatedEvents.some((evt) => evt.id === e.id))
+            );
+            allOverlapping.push(...overlapping);
+          }
+
+          // 중복이 있으면 모달 표시 후 대기
+          if (allOverlapping.length > 0) {
+            setEditingEvent(updatedEvents[0]);
+            setOverlappingEvents(allOverlapping);
+            setIsOverlapDialogOpen(true);
+            // 중복 모달에서 확인 후 전체 일정 업데이트를 위해 정보 저장
+            setPendingDragMove({
+              event: draggedEvent,
+              newDate,
+            });
+            return;
+          }
+
+          // 중복이 없으면 모든 일정 일괄 업데이트
+          const response = await fetch('/api/events-list', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ events: updatedEvents }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to move recurring events');
+          }
+
+          await fetchEvents();
+        }
+        enqueueSnackbar('반복 일정이 모두 이동되었습니다', { variant: 'success' });
+      }
+    } catch (error) {
+      console.error('일정 이동 실패:', error);
+      enqueueSnackbar('일정 이동에 실패했습니다', { variant: 'error' });
     }
   };
 
@@ -290,6 +400,74 @@ function App() {
     resetForm();
   };
 
+  /**
+   * 일정 드래그 시작 시
+   * 드래그할 일정의 ID를 dataTransfer에 저장하고 활성 상태로 설정
+   */
+  const handleDragStart = (e: React.DragEvent, event: Event) => {
+    e.dataTransfer.setData('eventId', event.id);
+    e.dataTransfer.effectAllowed = 'move';
+    setActiveEvent(event);
+  };
+
+  /**
+   * 일정 드롭 시
+   * 드롭된 위치의 날짜로 일정을 이동하고 중복 검사 및 반복 일정 처리 진행
+   * @param eventId - 드래그된 일정의 ID
+   * @param targetDate - 드롭된 위치의 날짜
+   */
+  const handleDragEnd = async (eventId: string, targetDate: string) => {
+    setActiveEvent(null);
+
+    const draggedEvent = events.find((evt) => evt.id === eventId);
+    // 같은 날짜로 이동하는 경우 처리하지 않음
+    if (!draggedEvent || draggedEvent.date === targetDate) {
+      return;
+    }
+
+    // 날짜만 변경한 새로운 일정 객체 생성
+    const updatedEvent: Event = {
+      ...draggedEvent,
+      date: targetDate,
+    };
+
+    // 중복 검사(자기 자신은 제외)
+    const overlapping = findOverlappingEvents(updatedEvent, events).filter(
+      (e) => e.id !== draggedEvent.id
+    );
+    const hasOverlap = overlapping.length > 0;
+
+    // 반복 일정인 경우: 사용자에게 단일/전체 이동 선택 모달 표시
+    if (isRecurringEvent(draggedEvent)) {
+      setPendingDragMove({
+        event: draggedEvent,
+        newDate: targetDate,
+      });
+      setRecurringDialogMode('drag');
+      setIsRecurringDialogOpen(true);
+      // 중복 정보도 함께 저장(모달 확인용)
+      if (hasOverlap) {
+        setOverlappingEvents(overlapping);
+      }
+      return;
+    }
+
+    // 일반 일정인 경우: 중복이 있으면 확인 모달 표시
+    if (hasOverlap) {
+      setEditingEvent(updatedEvent);
+      setOverlappingEvents(overlapping);
+      setIsOverlapDialogOpen(true);
+      return;
+    }
+
+    // 중복이 없으면 일정 업데이트
+    try {
+      await updateEvent(updatedEvent);
+    } catch (error) {
+      enqueueSnackbar('일정 이동을 실패했습니다', { variant: 'error' });
+    }
+  };
+
   const renderWeekView = () => {
     const weekDates = getWeekDates(currentDate);
     return (
@@ -308,62 +486,50 @@ function App() {
             </TableHead>
             <TableBody>
               <TableRow>
-                {weekDates.map((date) => (
-                  <TableCell
-                    key={date.toISOString()}
-                    sx={{
-                      height: '120px',
-                      verticalAlign: 'top',
-                      width: '14.28%',
-                      padding: 1,
-                      border: '1px solid #e0e0e0',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Typography variant="body2" fontWeight="bold">
-                      {date.getDate()}
-                    </Typography>
-                    {filteredEvents
-                      .filter(
-                        (event) => new Date(event.date).toDateString() === date.toDateString()
-                      )
-                      .map((event) => {
-                        const isNotified = notifiedEvents.includes(event.id);
-                        const isRepeating = event.repeat.type !== 'none';
+                {weekDates.map((date) => {
+                  const dateString = formatDate(date, date.getDate());
+                  const day = date.getDate();
+                  const holiday = holidays[dateString];
 
-                        return (
-                          <Box
-                            key={event.id}
-                            sx={{
-                              ...eventBoxStyles.common,
-                              ...(isNotified ? eventBoxStyles.notified : eventBoxStyles.normal),
-                            }}
-                          >
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              {isNotified && <Notifications fontSize="small" />}
-                              {/* ! TEST CASE */}
-                              {isRepeating && (
-                                <Tooltip
-                                  title={`${event.repeat.interval}${getRepeatTypeLabel(event.repeat.type)}마다 반복${
-                                    event.repeat.endDate ? ` (종료: ${event.repeat.endDate})` : ''
-                                  }`}
-                                >
-                                  <Repeat fontSize="small" />
-                                </Tooltip>
-                              )}
-                              <Typography
-                                variant="caption"
-                                noWrap
-                                sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}
-                              >
-                                {event.title}
-                              </Typography>
-                            </Stack>
-                          </Box>
-                        );
-                      })}
-                  </TableCell>
-                ))}
+                  return (
+                    <DroppableCell
+                      key={date.toISOString()}
+                      dateString={dateString}
+                      day={day}
+                      holiday={holiday}
+                      onDrop={(e: React.DragEvent, dateStr: string) => {
+                        const eventId = e.dataTransfer.getData('eventId');
+                        if (eventId) {
+                          handleDragEnd(eventId, dateStr);
+                        }
+                      }}
+                    >
+                      {filteredEvents
+                        .filter(
+                          (event) => new Date(event.date).toDateString() === date.toDateString()
+                        )
+                        .map((event) => {
+                          const isNotified = notifiedEvents.includes(event.id);
+                          const isRepeating = event.repeat.type !== 'none';
+
+                          return (
+                            <DraggableEvent
+                              key={event.id}
+                              event={event}
+                              isNotified={isNotified}
+                              isRepeating={isRepeating}
+                              getRepeatTypeLabel={getRepeatTypeLabel}
+                              onDragStart={handleDragStart}
+                              onDragEnd={(e: React.DragEvent) => {
+                                setActiveEvent(null);
+                                (e.currentTarget as HTMLElement).style.opacity = '1';
+                              }}
+                            />
+                          );
+                        })}
+                    </DroppableCell>
+                  );
+                })}
               </TableRow>
             </TableBody>
           </Table>
@@ -397,75 +563,39 @@ function App() {
                     const holiday = holidays[dateString];
 
                     return (
-                      <TableCell
+                      <DroppableCell
                         key={dayIndex}
-                        sx={{
-                          height: '120px',
-                          verticalAlign: 'top',
-                          width: '14.28%',
-                          padding: 1,
-                          border: '1px solid #e0e0e0',
-                          overflow: 'hidden',
-                          position: 'relative',
+                        dateString={dateString}
+                        day={day}
+                        holiday={holiday}
+                        onDrop={(e: React.DragEvent, dateStr: string) => {
+                          const eventId = e.dataTransfer.getData('eventId');
+                          if (eventId) {
+                            handleDragEnd(eventId, dateStr);
+                          }
                         }}
                       >
-                        {day && (
-                          <>
-                            <Typography variant="body2" fontWeight="bold">
-                              {day}
-                            </Typography>
-                            {holiday && (
-                              <Typography variant="body2" color="error">
-                                {holiday}
-                              </Typography>
-                            )}
-                            {getEventsForDay(filteredEvents, day).map((event) => {
-                              const isNotified = notifiedEvents.includes(event.id);
-                              const isRepeating = event.repeat.type !== 'none';
+                        {day &&
+                          getEventsForDay(filteredEvents, day).map((event) => {
+                            const isNotified = notifiedEvents.includes(event.id);
+                            const isRepeating = event.repeat.type !== 'none';
 
-                              return (
-                                <Box
-                                  key={event.id}
-                                  sx={{
-                                    p: 0.5,
-                                    my: 0.5,
-                                    backgroundColor: isNotified ? '#ffebee' : '#f5f5f5',
-                                    borderRadius: 1,
-                                    fontWeight: isNotified ? 'bold' : 'normal',
-                                    color: isNotified ? '#d32f2f' : 'inherit',
-                                    minHeight: '18px',
-                                    width: '100%',
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  <Stack direction="row" spacing={1} alignItems="center">
-                                    {isNotified && <Notifications fontSize="small" />}
-                                    {/* ! TEST CASE */}
-                                    {isRepeating && (
-                                      <Tooltip
-                                        title={`${event.repeat.interval}${getRepeatTypeLabel(event.repeat.type)}마다 반복${
-                                          event.repeat.endDate
-                                            ? ` (종료: ${event.repeat.endDate})`
-                                            : ''
-                                        }`}
-                                      >
-                                        <Repeat fontSize="small" />
-                                      </Tooltip>
-                                    )}
-                                    <Typography
-                                      variant="caption"
-                                      noWrap
-                                      sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}
-                                    >
-                                      {event.title}
-                                    </Typography>
-                                  </Stack>
-                                </Box>
-                              );
-                            })}
-                          </>
-                        )}
-                      </TableCell>
+                            return (
+                              <DraggableEvent
+                                key={event.id}
+                                event={event}
+                                isNotified={isNotified}
+                                isRepeating={isRepeating}
+                                getRepeatTypeLabel={getRepeatTypeLabel}
+                                onDragStart={handleDragStart}
+                                onDragEnd={(e: React.DragEvent) => {
+                                  setActiveEvent(null);
+                                  (e.currentTarget as HTMLElement).style.opacity = '1';
+                                }}
+                              />
+                            );
+                          })}
+                      </DroppableCell>
                     );
                   })}
                 </TableRow>
@@ -728,7 +858,9 @@ function App() {
                       {notifiedEvents.includes(event.id) && <Notifications color="error" />}
                       {event.repeat.type !== 'none' && (
                         <Tooltip
-                          title={`${event.repeat.interval}${getRepeatTypeLabel(event.repeat.type)}마다 반복${
+                          title={`${event.repeat.interval}${getRepeatTypeLabel(
+                            event.repeat.type
+                          )}마다 반복${
                             event.repeat.endDate ? ` (종료: ${event.repeat.endDate})` : ''
                           }`}
                         >
@@ -799,24 +931,74 @@ function App() {
           <Button onClick={() => setIsOverlapDialogOpen(false)}>취소</Button>
           <Button
             color="error"
-            onClick={() => {
+            onClick={async () => {
               setIsOverlapDialogOpen(false);
-              saveEvent({
-                id: editingEvent ? editingEvent.id : undefined,
-                title,
-                date,
-                startTime,
-                endTime,
-                description,
-                location,
-                category,
-                repeat: {
-                  type: isRepeating ? repeatType : 'none',
-                  interval: repeatInterval,
-                  endDate: repeatEndDate || undefined,
-                },
-                notificationTime,
-              });
+
+              // 드래그앤드롭으로 인한 수정인지 판단(폼 필드가 비어있으면 D&D로 판단)
+              const isDragAndDrop = editingEvent && !title && !date && !startTime && !endTime;
+
+              if (isDragAndDrop) {
+                // 드래그앤드롭으로 이동된 일정 저장
+                await updateEvent(editingEvent);
+                setEditingEvent(null);
+
+                // 반복 일정 일괄 이동이 대기 중인 경우 처리
+                if (pendingDragMove) {
+                  const { event, newDate } = pendingDragMove;
+                  // 원본 날짜와 이동할 날짜의 차이 계산
+                  const originalDate = new Date(event.date);
+                  const targetDateObj = new Date(newDate);
+                  const daysDiff = Math.round(
+                    (targetDateObj.getTime() - originalDate.getTime()) / (1000 * 60 * 60 * 24)
+                  );
+                  const relatedEvents = findRelatedRecurringEvents(event);
+
+                  // 관련된 모든 반복 일정의 날짜를 동일한 일수만큼 이동
+                  if (relatedEvents.length > 0) {
+                    const updatedEvents = relatedEvents.map((e) => {
+                      const eventDate = new Date(e.date);
+                      eventDate.setDate(eventDate.getDate() + daysDiff);
+                      return {
+                        ...e,
+                        date: formatDate(eventDate),
+                      };
+                    });
+
+                    // 모든 관련 일정 일괄 업데이트
+                    const response = await fetch('/api/events-list', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ events: updatedEvents }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Failed to move recurring events');
+                    }
+
+                    await fetchEvents();
+                    enqueueSnackbar('반복 일정이 모두 이동되었습니다', { variant: 'success' });
+                  }
+                  setPendingDragMove(null);
+                }
+              } else {
+                // 일반 추가/수정으로 인한 겹침: 폼 데이터로 일정 저장
+                saveEvent({
+                  id: editingEvent ? editingEvent.id : undefined,
+                  title,
+                  date,
+                  startTime,
+                  endTime,
+                  description,
+                  location,
+                  category,
+                  repeat: {
+                    type: isRepeating ? repeatType : 'none',
+                    interval: repeatInterval,
+                    endDate: repeatEndDate || undefined,
+                  },
+                  notificationTime,
+                });
+              }
             }}
           >
             계속 진행
