@@ -1,5 +1,5 @@
 import { TableCell, Typography } from '@mui/material';
-import { ReactNode, useState } from 'react';
+import React, { ReactNode, useState } from 'react';
 
 interface DroppableCellProps {
   dateString: string;
@@ -10,7 +10,14 @@ interface DroppableCellProps {
   children: ReactNode;
 }
 
-const DroppableCell = ({ dateString, day, holiday, onClick, onDrop, children }: DroppableCellProps) => {
+const DroppableCell = ({
+  dateString,
+  day,
+  holiday,
+  onClick,
+  onDrop,
+  children,
+}: DroppableCellProps) => {
   const [isOver, setIsOver] = useState(false);
 
   return (
@@ -30,7 +37,7 @@ const DroppableCell = ({ dateString, day, holiday, onClick, onDrop, children }: 
         e.preventDefault();
         setIsOver(true);
       }}
-      onDragLeave={(e) => {
+      onDragLeave={() => {
         setIsOver(false);
       }}
       onDrop={(e) => {
@@ -57,4 +64,3 @@ const DroppableCell = ({ dateString, day, holiday, onClick, onDrop, children }: 
 };
 
 export default DroppableCell;
-

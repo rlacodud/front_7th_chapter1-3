@@ -36,7 +36,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 import DraggableEvent from './components/DraggableEvent.tsx';
 import DroppableCell from './components/DroppableCell.tsx';
@@ -133,8 +133,6 @@ function App() {
   const { notifications, notifiedEvents, setNotifications } = useNotifications(events);
   const { view, setView, currentDate, holidays, navigate } = useCalendarView();
   const { searchTerm, filteredEvents, setSearchTerm } = useSearch(events, currentDate, view);
-
-  const [activeEvent, setActiveEvent] = useState<Event | null>(null);
   const [isOverlapDialogOpen, setIsOverlapDialogOpen] = useState(false);
   const [overlappingEvents, setOverlappingEvents] = useState<Event[]>([]);
   const [isRecurringDialogOpen, setIsRecurringDialogOpen] = useState(false);
@@ -402,12 +400,11 @@ function App() {
 
   /**
    * 일정 드래그 시작 시
-   * 드래그할 일정의 ID를 dataTransfer에 저장하고 활성 상태로 설정
+   * 드래그할 일정의 ID를 dataTransfer에 저장
    */
   const handleDragStart = (e: React.DragEvent, event: Event) => {
     e.dataTransfer.setData('eventId', event.id);
     e.dataTransfer.effectAllowed = 'move';
-    setActiveEvent(event);
   };
 
   /**
@@ -417,8 +414,6 @@ function App() {
    * @param targetDate - 드롭된 위치의 날짜
    */
   const handleDragEnd = async (eventId: string, targetDate: string) => {
-    setActiveEvent(null);
-
     const draggedEvent = events.find((evt) => evt.id === eventId);
     // 같은 날짜로 이동하는 경우 처리하지 않음
     if (!draggedEvent || draggedEvent.date === targetDate) {
@@ -463,7 +458,7 @@ function App() {
     // 중복이 없으면 일정 업데이트
     try {
       await updateEvent(updatedEvent);
-    } catch (error) {
+    } catch {
       enqueueSnackbar('일정 이동을 실패했습니다', { variant: 'error' });
     }
   };
@@ -522,7 +517,6 @@ function App() {
                               getRepeatTypeLabel={getRepeatTypeLabel}
                               onDragStart={handleDragStart}
                               onDragEnd={(e: React.DragEvent) => {
-                                setActiveEvent(null);
                                 (e.currentTarget as HTMLElement).style.opacity = '1';
                               }}
                             />
@@ -591,7 +585,6 @@ function App() {
                                 getRepeatTypeLabel={getRepeatTypeLabel}
                                 onDragStart={handleDragStart}
                                 onDragEnd={(e: React.DragEvent) => {
-                                  setActiveEvent(null);
                                   (e.currentTarget as HTMLElement).style.opacity = '1';
                                 }}
                               />

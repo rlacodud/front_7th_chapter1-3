@@ -66,7 +66,10 @@ const RecurringEventDialog = ({
   onClose,
   onConfirm,
   mode = 'edit',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  event,
 }: RecurringEventDialogProps) => {
+  // event prop is intentionally unused as it's for future use
   /**
    * Handles the "Yes" button click - operates on single instance only
    */
