@@ -52,7 +52,16 @@ const DroppableCell = ({
             {day}
           </Typography>
           {holiday && (
-            <Typography variant="body2" color="error">
+            <Typography
+              variant="body2"
+              color="error"
+              noWrap
+              sx={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+              }}
+            >
               {holiday}
             </Typography>
           )}
