@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, test } from '@playwright/test';
 
 /**
  * 검색 및 필터링 E2E 테스트
@@ -8,6 +8,19 @@ import { expect, test } from './fixtures';
  * - 주간 뷰 필터링 기능
  */
 test.describe('검색 및 필터링', () => {
+  // 각 테스트 전에 e2e.json 데이터 리셋 및 페이지 이동
+  test.beforeEach(async ({ page }) => {
+    try {
+      const response = await page.request.post('http://localhost:3000/api/reset-e2e-data');
+      if (!response.ok()) {
+        console.warn('Failed to reset e2e data, server might not be in e2e mode');
+      }
+    } catch (error) {
+      console.warn('Could not reset e2e data:', error);
+    }
+    await page.goto('http://localhost:5173');
+    await page.waitForTimeout(500);
+  });
   /**
    * 제목 기반 검색 테스트
    * 목적: 검색어를 입력하면 일정의 제목과 일치하는 일정만 필터링되는지 확인

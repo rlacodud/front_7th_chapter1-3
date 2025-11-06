@@ -1,10 +1,23 @@
-import { expect, test } from './fixtures';
+import { expect, test } from '@playwright/test';
 
 /**
  * 기본 일정 관리 워크플로우 E2E 테스트
  * 일정의 생성, 조회, 수정, 삭제 기능과 유효성 검증을 테스트합니다.
  */
 test.describe('기본 일정 관리 워크플로우', () => {
+  // 각 테스트 전에 e2e.json 데이터 리셋 및 페이지 이동
+  test.beforeEach(async ({ page }) => {
+    try {
+      const response = await page.request.post('http://localhost:3000/api/reset-e2e-data');
+      if (!response.ok()) {
+        console.warn('Failed to reset e2e data, server might not be in e2e mode');
+      }
+    } catch (error) {
+      console.warn('Could not reset e2e data:', error);
+    }
+    await page.goto('http://localhost:5173');
+    await page.waitForTimeout(500);
+  });
   /**
    * 일정 CRUD 테스트
    * 생성(Create), 조회(Read), 수정(Update), 삭제(Delete) 기능을 검증합니다.
