@@ -1,12 +1,12 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-import { test as base } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 
 /**
  * e2e 테스트용 fixtures
  * 각 테스트 전에 e2e.json 데이터를 초기 상태로 리셋합니다.
  * Note: 'use' is a Playwright fixture function, not a React Hook
  */
-export const test = base.extend({
+const testWithFixtures = base.extend({
   page: async ({ page }, use) => {
     // 테스트 실행 전 e2e.json 데이터 리셋
     try {
@@ -26,4 +26,5 @@ export const test = base.extend({
   },
 });
 
-export { expect } from '@playwright/test';
+export const test = testWithFixtures;
+export { expect };
