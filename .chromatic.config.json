@@ -4,6 +4,6 @@
   "exitZeroOnChanges": false,
   "exitOnceUploaded": false,
   "ignoreLastBuildOnBranch": "main",
-  "packageManager": "npm"
+  "packageManager": "pnpm"
 }
 

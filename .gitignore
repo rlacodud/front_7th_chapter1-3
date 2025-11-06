@@ -8,3 +8,14 @@ node_modules
 /.local-browsers/
 /allure-results/
 /.allure/
+
+# Playwright
+/blob-report/
+/playwright/.auth/
+
+# Environment variables
+.env.local
+.env*.local
+
+# Storybook build output
+storybook-static

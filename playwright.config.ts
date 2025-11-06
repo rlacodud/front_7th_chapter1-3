@@ -9,12 +9,12 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'TEST_ENV=e2e npm run server',
+      command: 'TEST_ENV=e2e pnpm run server',
       port: 3000,
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'npm run start',
+      command: 'pnpm run start',
       port: 5173,
       reuseExistingServer: !process.env.CI,
     },

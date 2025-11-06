@@ -38,6 +38,8 @@ export default [
         require: 'readonly',
         exports: 'readonly',
         global: 'readonly',
+        // React globals
+        React: 'readonly',
         // Custom globals
         Set: 'readonly',
         Map: 'readonly',
@@ -66,7 +68,10 @@ export default [
       '@typescript-eslint': typescriptPlugin,
     },
     languageOptions: {
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        React: 'readonly',
+      },
     },
     rules: {
       ...typescriptPlugin.configs.recommended.rules,
