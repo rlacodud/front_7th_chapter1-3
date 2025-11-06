@@ -9,6 +9,7 @@ import { test as base } from '@playwright/test';
  * - `@playwright/test` 대신 `./fixtures`에서 import한 test 사용
  */
 export const test = base.extend({
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   page: async ({ page }, use) => {
     // 테스트 실행 전 e2e.json 데이터 리셋
     try {

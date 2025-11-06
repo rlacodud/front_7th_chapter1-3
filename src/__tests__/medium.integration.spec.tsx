@@ -6,13 +6,13 @@ import { HttpResponse, http } from 'msw';
 import { SnackbarProvider } from 'notistack';
 import { ReactElement } from 'react';
 
-import App from '../App';
 import {
   setupMockHandlerCreation,
   setupMockHandlerDeletion,
   setupMockHandlerListCreation,
   setupMockHandlerUpdating,
 } from '../__mocks__/handlersUtils';
+import App from '../App';
 import { server } from '../setupTests';
 import { Event, RepeatInfo } from '../types';
 
@@ -622,7 +622,7 @@ describe('드래그 앤 드롭 (로직 검증)', () => {
 
       fireEvent.dragStart(draggableEvent, {
         dataTransfer: mockDataTransfer,
-      } as DragEventInit);
+      } as Partial<DragEvent>);
 
       // dataTransfer에 eventId가 설정되었는지 확인
       // 실제로는 App의 handleDragStart에서 setData가 호출되므로
@@ -633,7 +633,6 @@ describe('드래그 앤 드롭 (로직 검증)', () => {
 
   describe('handleDragEnd 로직 검증', () => {
     it('같은 날짜로 드래그하면 업데이트가 트리거되지 않는다', async () => {
-      const mockUpdateEvent = vi.fn();
       setupMockHandlerListCreation([
         {
           id: '1',
@@ -662,15 +661,15 @@ describe('드래그 앤 드롭 (로직 검증)', () => {
       // 같은 셀로 드래그
       fireEvent.dragStart(draggableEvent, {
         dataTransfer: mockDataTransfer,
-      } as DragEventInit);
+      } as Partial<DragEvent>);
       fireEvent.dragOver(sourceCell!, {
         dataTransfer: mockDataTransfer,
         preventDefault: () => {},
-      } as DragEventInit);
+      } as Partial<DragEvent>);
       fireEvent.drop(sourceCell!, {
         dataTransfer: mockDataTransfer,
         preventDefault: () => {},
-      } as DragEventInit);
+      } as Partial<DragEvent>);
 
       // 일정 수정 메시지가 표시되지 않아야 함
       await act(async () => {
@@ -708,15 +707,15 @@ describe('드래그 앤 드롭 (로직 검증)', () => {
 
       fireEvent.dragStart(draggableEvent, {
         dataTransfer: mockDataTransfer,
-      } as DragEventInit);
+      } as Partial<DragEvent>);
       fireEvent.dragOver(targetCell!, {
         dataTransfer: mockDataTransfer,
         preventDefault: () => {},
-      } as DragEventInit);
+      } as Partial<DragEvent>);
       fireEvent.drop(targetCell!, {
         dataTransfer: mockDataTransfer,
         preventDefault: () => {},
-      } as DragEventInit);
+      } as Partial<DragEvent>);
 
       // 반복 일정 다이얼로그가 표시되어야 함
       expect(await screen.findByText('반복 일정 이동')).toBeInTheDocument();
@@ -763,15 +762,15 @@ describe('드래그 앤 드롭 (로직 검증)', () => {
 
       fireEvent.dragStart(draggableEvent, {
         dataTransfer: mockDataTransfer,
-      } as DragEventInit);
+      } as Partial<DragEvent>);
       fireEvent.dragOver(targetCell!, {
         dataTransfer: mockDataTransfer,
         preventDefault: () => {},
-      } as DragEventInit);
+      } as Partial<DragEvent>);
       fireEvent.drop(targetCell!, {
         dataTransfer: mockDataTransfer,
         preventDefault: () => {},
-      } as DragEventInit);
+      } as Partial<DragEvent>);
 
       // 충돌 경고 다이얼로그가 표시되어야 함
       expect(await screen.findByText('일정 겹침 경고')).toBeInTheDocument();
