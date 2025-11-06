@@ -22,7 +22,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+      },
     },
   ],
+  // Global setup to reset e2e data before each test
+  globalSetup: undefined,
 });

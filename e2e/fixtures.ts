@@ -5,6 +5,9 @@ import { test as base, expect } from '@playwright/test';
  * e2e 테스트용 fixtures
  * 각 테스트 전에 e2e.json 데이터를 초기 상태로 리셋합니다.
  * Note: 'use' is a Playwright fixture function, not a React Hook
+ * 
+ * This file exports a custom test fixture that automatically resets e2e.json
+ * data before each test and navigates to the base URL.
  */
 const testWithFixtures = base.extend({
   page: async ({ page }, use) => {
@@ -26,5 +29,6 @@ const testWithFixtures = base.extend({
   },
 });
 
+// Export the extended test and expect
 export const test = testWithFixtures;
 export { expect };
