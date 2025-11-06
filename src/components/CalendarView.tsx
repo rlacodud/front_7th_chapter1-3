@@ -11,6 +11,8 @@ import {
 import React from 'react';
 
 import { Event, RepeatType } from '../types';
+import DraggableEvent from './DraggableEvent';
+import DroppableCell from './DroppableCell';
 import {
   formatDate,
   formatMonth,
@@ -19,8 +21,6 @@ import {
   getWeekDates,
   getWeeksAtMonth,
 } from '../utils/dateUtils';
-import DraggableEvent from './DraggableEvent';
-import DroppableCell from './DroppableCell';
 
 const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -30,9 +30,13 @@ interface CalendarViewProps {
   holidays: Record<string, string>;
   events: Event[];
   notifiedEvents: string[];
+
   getRepeatTypeLabel: (type: RepeatType) => string;
+
   onDateClick: (dateString: string) => void;
+
   onDragStart: (e: React.DragEvent, event: Event) => void;
+
   onDragEnd: (eventId: string, targetDate: string) => void;
 }
 

@@ -1,9 +1,17 @@
+import {
+  Box,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react';
-import { Box, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 
 import DraggableEvent from './DraggableEvent';
 import DroppableCell from './DroppableCell';
-import { Event } from '../types';
 
 const meta = {
   title: 'Components/CellTextLength',
@@ -108,7 +116,8 @@ export const LongEventTitle: Story = {
               <DraggableEvent
                 event={{
                   id: 'test-1',
-                  title: '매우 긴 제목의 일정입니다. 이 제목은 화면을 벗어날 수 있고, 셀 내에서 어떻게 표시될까요?',
+                  title:
+                    '매우 긴 제목의 일정입니다. 이 제목은 화면을 벗어날 수 있고, 셀 내에서 어떻게 표시될까요?',
                   date: '2025-11-10',
                   startTime: '10:00',
                   endTime: '11:00',
@@ -147,7 +156,8 @@ export const MultipleLongEventTitles: Story = {
                 <DraggableEvent
                   event={{
                     id: 'test-1',
-                    title: '첫 번째 매우 긴 제목의 일정입니다. 이 제목은 셀 내에서 어떻게 표시될까요?',
+                    title:
+                      '첫 번째 매우 긴 제목의 일정입니다. 이 제목은 셀 내에서 어떻게 표시될까요?',
                     date: '2025-11-10',
                     startTime: '10:00',
                     endTime: '11:00',
@@ -166,7 +176,8 @@ export const MultipleLongEventTitles: Story = {
                 <DraggableEvent
                   event={{
                     id: 'test-2',
-                    title: '두 번째 매우 긴 제목의 일정입니다. 이 제목도 셀 내에서 잘릴 수 있습니다.',
+                    title:
+                      '두 번째 매우 긴 제목의 일정입니다. 이 제목도 셀 내에서 잘릴 수 있습니다.',
                     date: '2025-11-10',
                     startTime: '11:00',
                     endTime: '12:00',
@@ -185,7 +196,8 @@ export const MultipleLongEventTitles: Story = {
                 <DraggableEvent
                   event={{
                     id: 'test-3',
-                    title: '세 번째 매우 긴 제목의 일정입니다. 여러 일정이 겹칠 때 어떻게 표시될까요?',
+                    title:
+                      '세 번째 매우 긴 제목의 일정입니다. 여러 일정이 겹칠 때 어떻게 표시될까요?',
                     date: '2025-11-10',
                     startTime: '12:00',
                     endTime: '13:00',
@@ -230,7 +242,8 @@ export const HolidayWithLongEventTitle: Story = {
               <DraggableEvent
                 event={{
                   id: 'test-1',
-                  title: '공휴일에 있는 매우 긴 제목의 일정입니다. 공휴일 이름과 일정 제목이 모두 길 때 어떻게 표시될까요?',
+                  title:
+                    '공휴일에 있는 매우 긴 제목의 일정입니다. 공휴일 이름과 일정 제목이 모두 길 때 어떻게 표시될까요?',
                   date: '2025-11-10',
                   startTime: '10:00',
                   endTime: '11:00',
@@ -375,4 +388,3 @@ export const MonthViewWithLongTexts: Story = {
     </TableContainer>
   ),
 };
-

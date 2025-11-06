@@ -61,17 +61,29 @@ const EventForm = ({
   startTimeError?: string;
   endTimeError?: string;
   isEditing: boolean;
+
   onTitleChange: (value: string) => void;
+
   onDateChange: (value: string) => void;
+
   onStartTimeChange: (value: string) => void;
+
   onEndTimeChange: (value: string) => void;
+
   onDescriptionChange: (value: string) => void;
+
   onLocationChange: (value: string) => void;
+
   onCategoryChange: (value: string) => void;
+
   onIsRepeatingChange: (checked: boolean) => void;
+
   onRepeatTypeChange: (value: 'daily' | 'weekly' | 'monthly' | 'yearly') => void;
+
   onRepeatIntervalChange: (value: number) => void;
+
   onRepeatEndDateChange: (value: string) => void;
+
   onNotificationTimeChange: (value: number) => void;
 }) => {
   const categories = ['업무', '개인', '가족', '기타'];

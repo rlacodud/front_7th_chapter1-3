@@ -6,6 +6,7 @@ interface DroppableCellProps {
   day: number | null;
   holiday?: string;
   onClick: () => void;
+
   onDrop: (e: React.DragEvent, dateString: string) => void;
   children: ReactNode;
 }

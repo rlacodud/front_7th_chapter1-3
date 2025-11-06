@@ -8,8 +8,11 @@ interface DraggableEventProps {
   event: Event;
   isNotified: boolean;
   isRepeating: boolean;
+
   getRepeatTypeLabel: (type: RepeatType) => string;
+
   onDragStart: (e: React.DragEvent, event: Event) => void;
+
   onDragEnd: (e: React.DragEvent) => void;
 }
 
