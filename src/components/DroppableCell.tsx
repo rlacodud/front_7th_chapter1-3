@@ -7,7 +7,7 @@ interface DroppableCellProps {
   holiday?: string;
   onClick: () => void;
 
-  onDrop: (e: React.DragEvent, dateString: string) => void;
+  onDrop: (_e: React.DragEvent, _dateString: string) => void;
   children: ReactNode;
 }
 
@@ -32,6 +32,11 @@ const DroppableCell = ({
         overflow: 'hidden',
         position: 'relative',
         backgroundColor: isOver ? '#f0f0f0' : '',
+        // 크로마틱 시각적 회귀 테스트를 위한 인라인 스타일
+        transition: 'background-color 0.2s ease-in-out',
+      }}
+      style={{
+        minHeight: '120px',
       }}
       onClick={onClick}
       onDragOver={(e) => {

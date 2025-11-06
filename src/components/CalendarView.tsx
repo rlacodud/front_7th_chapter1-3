@@ -35,9 +35,9 @@ interface CalendarViewProps {
 
   onDateClick: (dateString: string) => void;
 
-  onDragStart: (e: React.DragEvent, event: Event) => void;
+  onDragStart: (_e: React.DragEvent, _event: Event) => void;
 
-  onDragEnd: (eventId: string, targetDate: string) => void;
+  onDragEnd: (_eventId: string, _targetDate: string) => void;
 }
 
 /**

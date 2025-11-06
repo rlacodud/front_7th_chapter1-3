@@ -9,11 +9,11 @@ interface DraggableEventProps {
   isNotified: boolean;
   isRepeating: boolean;
 
-  getRepeatTypeLabel: (type: RepeatType) => string;
+  getRepeatTypeLabel: (_type: RepeatType) => string;
 
-  onDragStart: (e: React.DragEvent, event: Event) => void;
+  onDragStart: (_e: React.DragEvent, _event: Event) => void;
 
-  onDragEnd: (e: React.DragEvent) => void;
+  onDragEnd: (_e: React.DragEvent) => void;
 }
 
 const eventBoxStyles = {
@@ -52,6 +52,12 @@ const DraggableEvent = ({
       sx={{
         ...eventBoxStyles.common,
         ...(isNotified ? eventBoxStyles.notified : eventBoxStyles.normal),
+        // 크로마틱 시각적 회귀 테스트를 위한 인라인 스타일
+        border: '1px solid #e0e0e0',
+        transition: 'all 0.2s ease-in-out',
+      }}
+      style={{
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
       }}
       onDragStart={(e) => {
         onDragStart(e, event);
