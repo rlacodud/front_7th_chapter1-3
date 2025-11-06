@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * 알림 시스템 노출 조건 E2E 테스트
@@ -10,19 +10,6 @@ import { expect, test } from '@playwright/test';
  * - 여러 알림 동시 표시
  */
 test.describe('알림 시스템 노출 조건', () => {
-  // 각 테스트 전에 e2e.json 데이터 리셋 및 페이지 이동
-  test.beforeEach(async ({ page }) => {
-    try {
-      const response = await page.request.post('http://localhost:3000/api/reset-e2e-data');
-      if (!response.ok()) {
-        console.warn('Failed to reset e2e data, server might not be in e2e mode');
-      }
-    } catch (error) {
-      console.warn('Could not reset e2e data:', error);
-    }
-    await page.goto('http://localhost:5173');
-    await page.waitForTimeout(500);
-  });
   /**
    * 1분 전 알림 테스트
    * 목적: 알림 시간을 1분 전으로 설정한 일정이 시작 시간 1분 전에 알림이 노출되는지 확인

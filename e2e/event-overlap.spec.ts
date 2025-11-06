@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * 일정 겹침 처리 방식 E2E 테스트
@@ -7,19 +7,6 @@ import { expect, test } from '@playwright/test';
  * - 반복 일정 생성 시 겹침 무시 처리
  */
 test.describe('일정 겹침 처리 방식', () => {
-  // 각 테스트 전에 e2e.json 데이터 리셋 및 페이지 이동
-  test.beforeEach(async ({ page }) => {
-    try {
-      const response = await page.request.post('http://localhost:3000/api/reset-e2e-data');
-      if (!response.ok()) {
-        console.warn('Failed to reset e2e data, server might not be in e2e mode');
-      }
-    } catch (error) {
-      console.warn('Could not reset e2e data:', error);
-    }
-    await page.goto('http://localhost:5173');
-    await page.waitForTimeout(500);
-  });
   /**
    * 단일 일정 생성 시 겹침 경고 모달 표시 테스트
    * 목적: 기존 일정과 시간이 겹치는 단일 일정을 생성할 때, 겹침 경고 모달이 표시되는지 확인
