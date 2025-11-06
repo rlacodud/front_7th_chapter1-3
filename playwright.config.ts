@@ -1,0 +1,28 @@
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  reporter: [['list'], ['html']],
+  use: {
+    baseURL: 'http://localhost:5173',
+    headless: true,
+  },
+  webServer: [
+    {
+      command: 'TEST_ENV=e2e npm run server',
+      port: 3000,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: 'npm run start',
+      port: 5173,
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+});
