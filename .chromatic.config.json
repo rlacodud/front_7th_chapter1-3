@@ -1,0 +1,9 @@
+{
+  "projectToken": "YOUR_PROJECT_TOKEN",
+  "buildScriptName": "build-storybook",
+  "exitZeroOnChanges": false,
+  "exitOnceUploaded": false,
+  "ignoreLastBuildOnBranch": "main",
+  "packageManager": "npm"
+}
+
